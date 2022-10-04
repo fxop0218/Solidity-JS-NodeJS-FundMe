@@ -7,3 +7,5 @@ We use Solidity/HTML/JavaScript
  yarn add --dev http-server
  yarn build // when actualize index.js
  ```
+
+ 1. Add hardhat local host to metamask

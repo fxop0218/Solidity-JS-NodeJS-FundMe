@@ -152,7 +152,6 @@ async function walletConncet() {
         } catch (e) {
             console.log(e)
         }
-        document.getElementById("connectButton").innerHTML = "Connected!!!"
         // get account connected
         const accounts = await ethereum.request({ method: "eth_accounts" })
         console.log(accounts)
@@ -165,7 +164,8 @@ async function walletConncet() {
 // Fund funcion
 
 async function fund(ethAmount) {
-    console.log(`Funding x ${ethAmount}`)
+    // const ethAmount = document.getElementById("ethAmount") // Default js
+    console.log(`Funding: ${ethAmount}`)
     if (typeof window.ethereum !== "undefined") {
         // provider / connection to the bc
         // Signer // wallet // gas
@@ -173,16 +173,60 @@ async function fund(ethAmount) {
         const provider = new ethers.providers.Web3Provider(window.ethereum) // provider == metamask
         const signer = provider.getSigner() // All the accounts conecteds
         console.log(`Signer: ${signer}`)
-        const contract = new ethers.Contracts(contractAddress, abi, signer)
-        const transactionResponse = await contract.fund({
-            value: ethers.value.parseEthers(ethAmount),
-        })
+        const contract = new ethers.Contract(contractAddress, abi, signer)
+        try {
+            const transactionResponse = await contract.fund({
+                value: ethers.utils.parseEther(ethAmount),
+            })
+            // lisen event
+            await listenTransactionMine(transactionResponse, provider)
+            console.log("Completed!")
+        } catch (e) {
+            console.error(e)
+        }
     }
+}
+
+async function getBalance() {
+    if (typeof window.ethereum != "undefined") {
+        const provider = new ethers.providers.Web3Provider(window.ethereum) // Get wallet
+        const balance = await provider.getBalance(contractAddress) // get valance from wallet
+        const accounts = await ethereum.request({ method: "eth_accounts" })
+        console.log(`The balance is: ${ethers.utils.formatEther(balance)} ETH`) // Contract balance
+    }
+}
+
+// Comprovate if the transaction is completed
+function listenTransactionMine(transactionResponse, provider) {
+    console.log(`Mining ${transactionResponse}...`)
+    return new Promise((resolve, reject) => {
+        // Create listener https://docs.ethers.io/v5/api/providers/provider/#Provider-once
+        provider.once(transactionResponse.hash, (transacionRecived) => {
+            console.log(`Completed with ${transacionRecived.confirmations}`)
+            resolve()
+        }) // transactionresponse, anonimous function
+    })
 }
 
 // Withdraw
 
-module.exports = { fund, walletConncet }
+async function withdraw() {
+    if (typeof window.ethereum !== "undefined") {
+        console.log("Withdrawing...")
+        const provider = new ethers.providers.Web3Provider(window.ethereum) // provider == metamask
+        const signer = provider.getSigner()
+        const contract = new ethers.Contract(contractAddress, abi, signer)
+
+        try {
+            const transactionResponse = await contract.withdraw()
+            await listenTransactionMine(transactionResponse, provider)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+}
+
+module.exports = { fund, walletConncet, getBalance, withdraw }
 
 },{"./constants":1,"ethers":151}],3:[function(require,module,exports){
 "use strict";
